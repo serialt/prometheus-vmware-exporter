@@ -1,17 +1,18 @@
 package main
 
 import (
-	"./controller"
 	"flag"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
+	"prometheus-vmware-exporter/controller"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
-	listen   = ":9512"
+	listen   = ":9879"
 	host     = ""
 	username = ""
 	password = ""
@@ -32,7 +33,7 @@ func init() {
 	flag.StringVar(&password, "password", env("ESX_PASSWORD", password), "password for ESX")
 	flag.StringVar(&logLevel, "log", env("ESX_LOG", logLevel), "Log level must be, debug or info")
 	flag.Parse()
-	controllers.RegistredMetrics()
+	controller.RegistredMetrics()
 	collectMetrics()
 }
 
@@ -43,17 +44,17 @@ func collectMetrics() {
 	}
 	go func() {
 		logger.Debugf("Start collect host metrics")
-		controllers.NewVmwareHostMetrics(host, username, password, logger)
+		controller.NewVmwareHostMetrics(host, username, password, logger)
 		logger.Debugf("End collect host metrics")
 	}()
 	go func() {
 		logger.Debugf("Start collect datastore metrics")
-		controllers.NewVmwareDsMetrics(host, username, password, logger)
+		controller.NewVmwareDsMetrics(host, username, password, logger)
 		logger.Debugf("End collect datastore metrics")
 	}()
 	go func() {
 		logger.Debugf("Start collect VM metrics")
-		controllers.NewVmwareVmMetrics(host, username, password, logger)
+		controller.NewVmwareVmMetrics(host, username, password, logger)
 		logger.Debugf("End collect VM metrics")
 	}()
 }

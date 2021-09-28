@@ -1,12 +1,13 @@
-package controllers
+package controller
 
 import (
 	"context"
 	"fmt"
+	"net/url"
+
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/soap"
-	"net/url"
 )
 
 func newUrl(username, password string, u *url.URL) {
