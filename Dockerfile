@@ -1,10 +1,11 @@
-FROM golang:1.11 as builder
-WORKDIR /src/github.com/devinotelecom/prometheus-vmware-exporter
-COPY ./ /src/github.com/devinotelecom/prometheus-vmware-exporter
-RUN go get -d -v
-RUN CGO_ENABLED=0 GOOS=linux go build
+FROM golang:latest as builder
+WORKDIR /app
+COPY go.* .
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -ldflags="-w -s"
 
-FROM alpine:3.8
-COPY --from=builder /src/github.com/devinotelecom/prometheus-vmware-exporter/prometheus-vmware-exporter /usr/bin/prometheus-vmware-exporter
-EXPOSE 9512
+FROM scratch
+COPY --from=builder /app/prometheus-vmware-exporter /usr/bin/prometheus-vmware-exporter
+EXPOSE 9879
 ENTRYPOINT ["prometheus-vmware-exporter"]
