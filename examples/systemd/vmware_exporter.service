@@ -1,0 +1,17 @@
+[Unit]
+Description=Prometheus VMWare Esxi Exporter
+Documentation=https://github.com/serialt/
+
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/local/vmware_exporter
+ExecStart=/usr/local/vmware_exporter/vmware_exporter -vmware.status_paths=/var/log/vmware/vmware-status.log
+Restart=on-failure
+RestartSec=3
+TimeoutSec=50
+
+
+[Install]
+WantedBy=multi-user.target
+

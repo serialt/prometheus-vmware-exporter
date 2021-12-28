@@ -8,6 +8,8 @@ import (
 	"prometheus-vmware-exporter/controller"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/exporter-toolkit/web"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,6 +19,7 @@ var (
 	username = ""
 	password = ""
 	logLevel = "info"
+	config   = ""
 )
 
 func env(key, def string) string {
@@ -32,6 +35,7 @@ func init() {
 	flag.StringVar(&username, "username", env("ESX_USERNAME", username), "User for ESX")
 	flag.StringVar(&password, "password", env("ESX_PASSWORD", password), "password for ESX")
 	flag.StringVar(&logLevel, "log", env("ESX_LOG", logLevel), "Log level must be, debug or info")
+	flag.StringVar(&config, "config", env("CONFIG", config), "[EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.")
 	flag.Parse()
 	controller.RegistredMetrics()
 	collectMetrics()
@@ -104,5 +108,13 @@ func main() {
 			</body>
 			</html>`))
 	})
-	logger.Fatal(http.ListenAndServe(listen, nil))
+	promlogConfig := &promlog.Config{}
+	promlogger := promlog.New(promlogConfig)
+	server := &http.Server{Addr: listen}
+	if err := web.ListenAndServe(server, config, promlogger); err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
+
+	// logger.Fatal(http.ListenAndServe(listen, nil))
 }
