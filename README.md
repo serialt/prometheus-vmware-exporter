@@ -7,6 +7,7 @@ docker build -t prometheus-vmware-exporter .
 ```
 
 ## Run
+配置文件config.yaml
 ```
 # tls_server_config:
 #   cert_file: exporter.crt
