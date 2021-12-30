@@ -44,10 +44,10 @@ networks:
   esxi:
 
 services:
-  exsi10:
+  esxi10:
     image: prometheus-vmware-exporter:0.2.1
-    container_name: exsi10
-    hostname: exsi10
+    container_name: esxi10
+    hostname: esxi10
     restart: always
     # privileged: true
     # user: root
@@ -55,8 +55,8 @@ services:
       - "9810:9879"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /yaml/vmware/config/:/etc/vmware/config
-    command: --config=/etc/vmware/config/config.yaml
+      - /yaml/vmware/config.yaml:/etc/vmware/config.yaml
+    command: -config=/etc/vmware/config.yaml
     environment:
       - ESX_HOST=host
       - ESX_USERNAME=user
