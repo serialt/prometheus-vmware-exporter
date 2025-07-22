@@ -3,14 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"prometheus-vmware-exporter/controller"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/exporter-toolkit/web"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -42,24 +41,20 @@ func init() {
 }
 
 func collectMetrics() {
-	logger, err := initLogger()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
 	go func() {
-		logger.Debugf("Start collect host metrics")
-		controller.NewVmwareHostMetrics(host, username, password, logger)
-		logger.Debugf("End collect host metrics")
+		slog.Debug("Start collect host metrics")
+		controller.NewVmwareHostMetrics(host, username, password)
+		slog.Debug("End collect host metrics")
 	}()
 	go func() {
-		logger.Debugf("Start collect datastore metrics")
-		controller.NewVmwareDsMetrics(host, username, password, logger)
-		logger.Debugf("End collect datastore metrics")
+		slog.Debug("Start collect datastore metrics")
+		controller.NewVmwareDsMetrics(host, username, password)
+		slog.Debug("End collect datastore metrics")
 	}()
 	go func() {
-		logger.Debugf("Start collect VM metrics")
-		controller.NewVmwareVmMetrics(host, username, password, logger)
-		logger.Debugf("End collect VM metrics")
+		slog.Debug("Start collect VM metrics")
+		controller.NewVmwareVmMetrics(host, username, password)
+		slog.Debug("End collect VM metrics")
 	}()
 }
 
@@ -71,33 +66,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	h.ServeHTTP(w, r)
 }
 
-func initLogger() (*log.Logger, error) {
-	logger := log.New()
-	logrusLogLevel, err := log.ParseLevel(logLevel)
-	if err != nil {
-		return logger, err
-	}
-	logger.SetLevel(logrusLogLevel)
-	logger.Formatter = &log.TextFormatter{DisableTimestamp: false, FullTimestamp: true}
-	return logger, nil
-}
-
 func main() {
-	logger, err := initLogger()
-	if err != nil {
-		logger.Fatal(err)
-	}
 	if host == "" {
-		logger.Fatal("Yor must configured systemm env ESX_HOST or key -host")
+		slog.Error("Yor must configured systemm env ESX_HOST or key -host")
 	}
 	if username == "" {
-		logger.Fatal("Yor must configured system env ESX_USERNAME or key -username")
+		slog.Error("Yor must configured system env ESX_USERNAME or key -username")
 	}
 	if password == "" {
-		logger.Fatal("Yor must configured system env ESX_PASSWORD or key -password")
+		slog.Error("Yor must configured system env ESX_PASSWORD or key -password")
 	}
 	msg := fmt.Sprintf("Exporter start on port %s", listen)
-	logger.Info(msg)
+	slog.Info(msg)
 	http.HandleFunc("/metrics", handler)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
@@ -108,13 +88,14 @@ func main() {
 			</body>
 			</html>`))
 	})
-	promlogConfig := &promlog.Config{}
-	promlogger := promlog.New(promlogConfig)
+	flags := &web.FlagConfig{
+		WebListenAddresses: &([]string{listen}),
+		WebConfigFile:      &config,
+	}
 	server := &http.Server{Addr: listen}
-	if err := web.ListenAndServe(server, config, promlogger); err != nil {
-		logger.Error(err)
+	if err := web.ListenAndServe(server, flags, slog.Default()); err != nil {
+		slog.Error("Service start failed", "err", err)
 		os.Exit(1)
 	}
 
-	// logger.Fatal(http.ListenAndServe(listen, nil))
 }
